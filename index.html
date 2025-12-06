@@ -1,0 +1,1867 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  
+  <!-- PWA iOS 設定 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="倒數日">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0a0a0f">
+  
+  <!-- iOS 圖示 -->
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230a0a0f' width='100' height='100' rx='20'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='%2300f5ff'>📅</text></svg>">
+  
+  <title>倒數日追蹤器</title>
+  
+  <!-- PWA Manifest 內嵌 -->
+  <link rel="manifest" href="data:application/json,{
+    &quot;name&quot;: &quot;倒數日追蹤器&quot;,
+    &quot;short_name&quot;: &quot;倒數日&quot;,
+    &quot;description&quot;: &quot;校園行事曆提醒&quot;,
+    &quot;start_url&quot;: &quot;.&quot;,
+    &quot;display&quot;: &quot;standalone&quot;,
+    &quot;background_color&quot;: &quot;%230a0a0f&quot;,
+    &quot;theme_color&quot;: &quot;%230a0a0f&quot;
+  }">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ============================================
+       🚀 開機動畫樣式
+       ============================================ */
+    .splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #0a0a0f;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .splash-screen.fade-out {
+      animation: splashFadeOut 0.8s ease forwards;
+    }
+
+    @keyframes splashFadeOut {
+      0% { opacity: 1; }
+      100% { opacity: 0; visibility: hidden; pointer-events: none; }
+    }
+
+    /* 粒子背景 */
+    .particles {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: var(--accent-cyan);
+      border-radius: 50%;
+      opacity: 0;
+      animation: particleFloat 3s ease-in-out infinite;
+    }
+
+    @keyframes particleFloat {
+      0% { opacity: 0; transform: translateY(100vh) scale(0); }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(-100vh) scale(1); }
+    }
+
+    /* 光暈背景 */
+    .splash-glow {
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0, 245, 255, 0.3) 0%, transparent 70%);
+      animation: glowPulse 2s ease-in-out infinite;
+    }
+
+    .splash-glow.pink {
+      background: radial-gradient(circle, rgba(255, 0, 255, 0.2) 0%, transparent 70%);
+      animation-delay: 0.5s;
+    }
+
+    @keyframes glowPulse {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.3); opacity: 0.8; }
+    }
+
+    /* Logo 容器 */
+    .splash-logo-container {
+      position: relative;
+      z-index: 2;
+      perspective: 1000px;
+    }
+
+    /* 3D Logo */
+    .splash-logo {
+      font-size: 5rem;
+      animation: logoEntry 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      transform: rotateY(-180deg) scale(0);
+      filter: drop-shadow(0 0 30px rgba(0, 245, 255, 0.8));
+    }
+
+    @keyframes logoEntry {
+      0% { transform: rotateY(-180deg) scale(0); opacity: 0; }
+      60% { transform: rotateY(20deg) scale(1.1); opacity: 1; }
+      80% { transform: rotateY(-10deg) scale(0.95); }
+      100% { transform: rotateY(0deg) scale(1); }
+    }
+
+    /* 環繞光環 */
+    .logo-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 120px;
+      height: 120px;
+      margin: -60px 0 0 -60px;
+      border: 2px solid transparent;
+      border-top-color: var(--accent-cyan);
+      border-radius: 50%;
+      animation: ringRotate 1.5s linear infinite;
+      opacity: 0;
+      animation-delay: 0.8s;
+    }
+
+    .logo-ring:nth-child(2) {
+      width: 140px;
+      height: 140px;
+      margin: -70px 0 0 -70px;
+      border-top-color: var(--accent-pink);
+      animation-direction: reverse;
+      animation-delay: 0.9s;
+    }
+
+    .logo-ring:nth-child(3) {
+      width: 160px;
+      height: 160px;
+      margin: -80px 0 0 -80px;
+      border-top-color: var(--accent-purple);
+      animation-delay: 1s;
+    }
+
+    @keyframes ringRotate {
+      0% { transform: rotate(0deg); opacity: 0; }
+      20% { opacity: 0.8; }
+      100% { transform: rotate(360deg); opacity: 0.8; }
+    }
+
+    /* 標題文字 */
+    .splash-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-top: 30px;
+      background: linear-gradient(135deg, #00f5ff, #ff00ff, #a855f7);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: titleFadeIn 0.8s ease forwards, gradientShift 3s ease infinite;
+      animation-delay: 0.5s, 0s;
+      opacity: 0;
+      transform: translateY(20px);
+      text-align: center;
+    }
+
+    @keyframes titleFadeIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .splash-subtitle {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-top: 8px;
+      opacity: 0;
+      animation: subtitleFadeIn 0.6s ease forwards;
+      animation-delay: 0.8s;
+    }
+
+    @keyframes subtitleFadeIn {
+      to { opacity: 1; }
+    }
+
+    /* 進度條 */
+    .splash-progress {
+      position: absolute;
+      bottom: 100px;
+      width: 200px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .splash-progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-pink), var(--accent-purple));
+      background-size: 200% 100%;
+      border-radius: 2px;
+      animation: progressFill 2s ease forwards, progressShine 1s linear infinite;
+      animation-delay: 0.5s, 0s;
+    }
+
+    @keyframes progressFill {
+      0% { width: 0%; }
+      100% { width: 100%; }
+    }
+
+    @keyframes progressShine {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .splash-loading-text {
+      position: absolute;
+      bottom: 70px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      letter-spacing: 3px;
+      opacity: 0;
+      animation: loadingTextFade 0.5s ease forwards;
+      animation-delay: 0.6s;
+    }
+
+    @keyframes loadingTextFade {
+      to { opacity: 0.7; }
+    }
+
+    /* 版本號 */
+    .splash-version {
+      position: absolute;
+      bottom: 40px;
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.3);
+      opacity: 0;
+      animation: versionFade 0.5s ease forwards;
+      animation-delay: 1s;
+    }
+
+    @keyframes versionFade {
+      to { opacity: 1; }
+    }
+
+    /* 數字跳動效果 */
+    .countdown-preview {
+      position: absolute;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 3rem;
+      font-weight: 900;
+      color: transparent;
+      -webkit-text-stroke: 1px rgba(0, 245, 255, 0.3);
+      opacity: 0;
+      animation: countdownFloat 2s ease-in-out infinite;
+    }
+
+    .countdown-preview:nth-child(1) { top: 15%; left: 10%; animation-delay: 0s; }
+    .countdown-preview:nth-child(2) { top: 25%; right: 15%; animation-delay: 0.3s; }
+    .countdown-preview:nth-child(3) { bottom: 30%; left: 15%; animation-delay: 0.6s; }
+    .countdown-preview:nth-child(4) { bottom: 20%; right: 10%; animation-delay: 0.9s; }
+
+    @keyframes countdownFloat {
+      0%, 100% { opacity: 0; transform: translateY(10px); }
+      50% { opacity: 0.5; transform: translateY(-10px); }
+    }
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-card: #1a1a25;
+      --text-primary: #ffffff;
+      --text-secondary: #8888aa;
+      --accent-cyan: #00f5ff;
+      --accent-pink: #ff00ff;
+      --accent-purple: #a855f7;
+      --accent-green: #00ff88;
+      --accent-orange: #ff9500;
+      --accent-red: #ff3b5c;
+      --border-glow: rgba(0, 245, 255, 0.2);
+      --safe-top: env(safe-area-inset-top);
+      --safe-bottom: env(safe-area-inset-bottom);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Noto Sans TC', -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding-top: var(--safe-top);
+      padding-bottom: calc(80px + var(--safe-bottom));
+    }
+
+    /* 背景效果 */
+    .bg-gradient {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 20%, rgba(0, 245, 255, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(255, 0, 255, 0.05) 0%, transparent 40%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* 主容器 */
+    .app-container {
+      position: relative;
+      z-index: 1;
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    /* 頂部狀態欄 */
+    .status-bar {
+      padding: 16px 0;
+      text-align: center;
+    }
+
+    .app-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .app-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* 統計卡片區 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .stat-item {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 16px 12px;
+      text-align: center;
+      border: 1px solid var(--border-glow);
+    }
+
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .stat-item.urgent .stat-value { color: var(--accent-red); }
+    .stat-item.soon .stat-value { color: var(--accent-orange); }
+    .stat-item.normal .stat-value { color: var(--accent-green); }
+
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      margin-top: 6px;
+    }
+
+    /* 分類標籤 */
+    .filter-scroll {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 8px 0;
+      margin: 0 -16px;
+      padding-left: 16px;
+      padding-right: 16px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .filter-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .filter-chip {
+      flex-shrink: 0;
+      padding: 8px 16px;
+      border-radius: 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-glow);
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-chip.active {
+      background: linear-gradient(135deg, rgba(0, 245, 255, 0.3), rgba(168, 85, 247, 0.3));
+      border-color: var(--accent-cyan);
+      color: var(--text-primary);
+    }
+
+    /* 事件列表 */
+    .events-list {
+      margin-top: 16px;
+    }
+
+    .event-card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border-glow);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s;
+    }
+
+    .event-card:active {
+      transform: scale(0.98);
+    }
+
+    .event-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 4px;
+      height: 100%;
+    }
+
+    .event-card.urgent::before { background: var(--accent-red); }
+    .event-card.soon::before { background: var(--accent-orange); }
+    .event-card.normal::before { background: var(--accent-green); }
+    .event-card.passed::before { background: var(--text-secondary); }
+    .event-card.passed { opacity: 0.5; }
+
+    .countdown-badge {
+      min-width: 60px;
+      text-align: center;
+      padding: 10px 8px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .countdown-num {
+      font-size: 1.6rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .event-card.urgent .countdown-num { color: var(--accent-red); }
+    .event-card.soon .countdown-num { color: var(--accent-orange); }
+    .event-card.normal .countdown-num { color: var(--accent-green); }
+    .event-card.passed .countdown-num { color: var(--text-secondary); }
+
+    .countdown-unit {
+      font-size: 0.65rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .event-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .event-category-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 8px;
+      font-size: 0.65rem;
+      margin-bottom: 4px;
+    }
+
+    .tag-exam { background: rgba(255, 59, 92, 0.2); color: #ff6b8a; }
+    .tag-payment { background: rgba(0, 245, 255, 0.2); color: #00f5ff; }
+    .tag-activity { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+    .tag-holiday { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+    .tag-other { background: rgba(255, 149, 0, 0.2); color: #ffaa44; }
+
+    .notify-badge {
+      font-size: 0.75rem;
+      opacity: 0.8;
+    }
+
+    .event-name {
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .event-date-text {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .event-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .action-icon {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .action-icon:active {
+      background: rgba(0, 245, 255, 0.2);
+      color: var(--accent-cyan);
+    }
+
+    /* 空狀態 */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+
+    .empty-icon {
+      font-size: 4rem;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    /* 底部導航 */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(18, 18, 26, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border-glow);
+      display: flex;
+      justify-content: space-around;
+      padding: 12px 0;
+      padding-bottom: calc(12px + var(--safe-bottom));
+      z-index: 100;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-secondary);
+      font-size: 0.7rem;
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 12px;
+      transition: all 0.2s;
+      background: none;
+      border: none;
+    }
+
+    .nav-item.active {
+      color: var(--accent-cyan);
+    }
+
+    .nav-item:active {
+      background: rgba(0, 245, 255, 0.1);
+    }
+
+    .nav-icon {
+      font-size: 1.4rem;
+    }
+
+    .nav-item.add-btn {
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+      color: white;
+      border-radius: 50%;
+      width: 56px;
+      height: 56px;
+      margin-top: -28px;
+      box-shadow: 0 4px 20px rgba(0, 245, 255, 0.3);
+    }
+
+    .nav-item.add-btn .nav-icon {
+      font-size: 1.8rem;
+    }
+
+    .nav-item.add-btn span:last-child {
+      display: none;
+    }
+
+    /* 頁面視圖 */
+    .page-view {
+      display: none;
+    }
+
+    .page-view.active {
+      display: block;
+    }
+
+    /* 設定頁 */
+    .settings-section {
+      background: var(--bg-card);
+      border-radius: 16px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .settings-header {
+      padding: 16px;
+      font-weight: 500;
+      border-bottom: 1px solid var(--border-glow);
+    }
+
+    .settings-item {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .settings-item:last-child {
+      border-bottom: none;
+    }
+
+    .settings-label {
+      font-size: 0.9rem;
+    }
+
+    .settings-input {
+      flex: 1;
+      margin-left: 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--border-glow);
+      border-radius: 10px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 0.9rem;
+    }
+
+    .settings-input:focus {
+      outline: none;
+      border-color: var(--accent-cyan);
+    }
+
+    .settings-btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+      color: white;
+    }
+
+    .btn-success {
+      background: var(--accent-green);
+      color: black;
+    }
+
+    .btn-line {
+      background: #00B900;
+      color: white;
+      width: 100%;
+      margin-top: 12px;
+    }
+
+    /* 模態框 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      z-index: 200;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-sheet {
+      background: var(--bg-secondary);
+      border-radius: 20px 20px 0 0;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: slideUp 0.3s ease;
+      padding-bottom: var(--safe-bottom);
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .modal-handle {
+      width: 40px;
+      height: 4px;
+      background: var(--text-secondary);
+      border-radius: 2px;
+      margin: 12px auto;
+    }
+
+    .modal-header {
+      padding: 0 20px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 50%;
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      padding: 0 20px 20px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid var(--border-glow);
+      border-radius: 12px;
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-size: 1rem;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent-cyan);
+    }
+
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .category-btn {
+      padding: 12px 8px;
+      border: 1px solid var(--border-glow);
+      border-radius: 12px;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .category-btn.selected {
+      background: linear-gradient(135deg, rgba(0, 245, 255, 0.2), rgba(168, 85, 247, 0.2));
+      border-color: var(--accent-cyan);
+      color: var(--text-primary);
+    }
+
+    /* 通知模式選擇器 */
+    .notify-mode-selector {
+      display: flex;
+      gap: 8px;
+    }
+
+    .notify-btn {
+      flex: 1;
+      padding: 12px 8px;
+      border: 1px solid var(--border-glow);
+      border-radius: 12px;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .notify-btn .notify-icon {
+      font-size: 1.2rem;
+    }
+
+    .notify-btn .notify-text {
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .notify-btn .notify-desc {
+      font-size: 0.65rem;
+      opacity: 0.7;
+    }
+
+    .notify-btn.selected {
+      background: linear-gradient(135deg, rgba(0, 245, 255, 0.2), rgba(168, 85, 247, 0.2));
+      border-color: var(--accent-cyan);
+      color: var(--text-primary);
+    }
+
+    .notify-btn[data-mode="auto"].selected {
+      background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 245, 255, 0.2));
+      border-color: var(--accent-green);
+    }
+
+    .notify-btn[data-mode="manual"].selected {
+      background: linear-gradient(135deg, rgba(255, 149, 0, 0.2), rgba(255, 200, 0, 0.2));
+      border-color: var(--accent-orange);
+    }
+
+    .notify-btn[data-mode="off"].selected {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--text-secondary);
+    }
+
+    .modal-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border-glow);
+    }
+
+    .modal-footer .btn-primary {
+      width: 100%;
+      padding: 16px;
+      font-size: 1rem;
+    }
+
+    /* LINE 發送頁 */
+    .line-preview {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 0.85rem;
+      white-space: pre-wrap;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 12px;
+    }
+
+    .event-checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--bg-card);
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+
+    .event-checkbox-item input {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--accent-cyan);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: calc(20px + var(--safe-top));
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-glow);
+      border-radius: 12px;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      z-index: 300;
+      animation: toastIn 0.3s ease;
+    }
+
+    .toast.success { border-color: var(--accent-green); }
+    .toast.error { border-color: var(--accent-red); }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <!-- 🚀 開機動畫 -->
+  <div class="splash-screen" id="splashScreen">
+    <!-- 粒子背景 -->
+    <div class="particles" id="particles"></div>
+    
+    <!-- 光暈效果 -->
+    <div class="splash-glow"></div>
+    <div class="splash-glow pink" style="transform: translate(100px, -50px);"></div>
+    
+    <!-- 飄浮數字 -->
+    <div class="countdown-preview">7</div>
+    <div class="countdown-preview">14</div>
+    <div class="countdown-preview">3</div>
+    <div class="countdown-preview">30</div>
+    
+    <!-- Logo 區 -->
+    <div class="splash-logo-container">
+      <div class="logo-ring"></div>
+      <div class="logo-ring"></div>
+      <div class="logo-ring"></div>
+      <div class="splash-logo">📅</div>
+    </div>
+    
+    <!-- 標題 -->
+    <h1 class="splash-title">倒數日追蹤器</h1>
+    <p class="splash-subtitle">校園行事曆提醒 · LINE 通知整合</p>
+    
+    <!-- 進度條 -->
+    <div class="splash-progress">
+      <div class="splash-progress-bar"></div>
+    </div>
+    <div class="splash-loading-text">LOADING</div>
+    <div class="splash-version">v1.0 PWA</div>
+  </div>
+
+  <div class="bg-gradient"></div>
+
+  <div class="app-container">
+    <!-- 首頁 -->
+    <div class="page-view active" id="homePage">
+      <div class="status-bar">
+        <h1 class="app-title">📅 倒數日追蹤器</h1>
+        <p class="app-subtitle">校園行事曆提醒</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-item urgent">
+          <div class="stat-value" id="urgentCount">0</div>
+          <div class="stat-label">🔴 緊急</div>
+        </div>
+        <div class="stat-item soon">
+          <div class="stat-value" id="soonCount">0</div>
+          <div class="stat-label">🟠 即將</div>
+        </div>
+        <div class="stat-item normal">
+          <div class="stat-value" id="normalCount">0</div>
+          <div class="stat-label">🟢 正常</div>
+        </div>
+      </div>
+
+      <div class="filter-scroll">
+        <button class="filter-chip active" data-filter="all">全部</button>
+        <button class="filter-chip" data-filter="exam">📝 考試</button>
+        <button class="filter-chip" data-filter="payment">💰 繳費</button>
+        <button class="filter-chip" data-filter="activity">🎪 活動</button>
+        <button class="filter-chip" data-filter="holiday">🏖️ 假期</button>
+        <button class="filter-chip" data-filter="other">📌 其他</button>
+      </div>
+
+      <div class="events-list" id="eventsList"></div>
+    </div>
+
+    <!-- 通知設定頁 -->
+    <div class="page-view" id="linePage">
+      <div class="status-bar">
+        <h1 class="app-title">🔔 自動通知設定</h1>
+        <p class="app-subtitle">每日自動發送 LINE 提醒</p>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-header">⏰ 自動發送時間</div>
+        <div class="settings-item">
+          <span class="settings-label">每日</span>
+          <input type="time" class="settings-input" id="sendTime" value="07:00" style="width: 120px;">
+          <span class="settings-label">發送</span>
+        </div>
+        <div class="settings-item" style="color: var(--text-secondary); font-size: 0.8rem;">
+          僅發送設定為「🔄自動推送」的事件
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-header">📋 提醒範圍</div>
+        <div class="settings-item">
+          <span class="settings-label">只發送</span>
+          <input type="number" class="settings-input" id="remindDays" value="30" min="0" max="365" style="width: 80px;">
+          <span class="settings-label">天內的事件</span>
+        </div>
+        <div class="settings-item" style="color: var(--text-secondary); font-size: 0.8rem;">
+          設為 0 表示發送所有事件
+        </div>
+      </div>
+
+      <button class="settings-btn btn-primary" onclick="saveNotifySettings()" style="width: 100%; margin-top: 16px;">💾 儲存自動通知設定</button>
+
+      <div class="settings-section" style="margin-top: 20px;">
+        <div class="settings-header">✋ 手動發送</div>
+        <div class="settings-item" style="flex-direction: column; gap: 12px;">
+          <button class="settings-btn" onclick="sendManualEvents()" style="width: 100%; background: var(--accent-orange); color: black;">✋ 發送手動推送事件</button>
+          <div style="color: var(--text-secondary); font-size: 0.8rem; text-align: center;">
+            發送設定為「✋手動推送」的事件
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section" style="margin-top: 12px;">
+        <div class="settings-header">📤 立即全部發送</div>
+        <div class="settings-item" style="flex-direction: column; gap: 12px;">
+          <button class="settings-btn btn-line" onclick="sendNow()" style="width: 100%;">📤 立即發送一次（測試）</button>
+          <div style="color: var(--text-secondary); font-size: 0.8rem; text-align: center;">
+            發送所有「🔄自動推送」事件，不影響每日排程
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section" style="margin-top: 20px;">
+        <div class="settings-header">📊 事件資料庫</div>
+        <div class="settings-item">
+          <button class="settings-btn" onclick="openSheet()" style="flex: 1; background: var(--bg-primary); color: var(--text-primary);">📊 開啟 Google Sheets</button>
+        </div>
+        <div class="settings-item" style="color: var(--text-secondary); font-size: 0.8rem;">
+          可直接在試算表中編輯事件
+        </div>
+      </div>
+    </div>
+
+    <!-- 設定頁 -->
+    <div class="page-view" id="settingsPage">
+      <div class="status-bar">
+        <h1 class="app-title">⚙️ 設定</h1>
+        <p class="app-subtitle">LINE 通知設定</p>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-header">🔔 LINE 通知</div>
+        <div class="settings-item">
+          <input type="text" class="settings-input" id="gasUrl" placeholder="GAS 網址">
+        </div>
+        <div class="settings-item">
+          <input type="password" class="settings-input" id="secretKey" placeholder="驗證密鑰">
+        </div>
+        <div class="settings-item">
+          <input type="text" class="settings-input" id="sheetUrl" placeholder="Google Sheets 網址">
+        </div>
+        <div class="settings-item" style="flex-direction: column; gap: 12px;">
+          <button class="settings-btn btn-primary" onclick="testConnection()" style="width: 100%;">🔗 測試連線</button>
+          <button class="settings-btn btn-success" onclick="saveSettings()" style="width: 100%;">💾 儲存設定</button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-header">📊 資料管理</div>
+        <div class="settings-item">
+          <button class="settings-btn" onclick="exportData()" style="flex: 1; margin-right: 8px; background: var(--bg-primary); color: var(--text-primary);">📤 匯出</button>
+          <button class="settings-btn" onclick="importData()" style="flex: 1; background: var(--bg-primary); color: var(--text-primary);">📥 匯入</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部導航 -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-page="homePage">
+      <span class="nav-icon">🏠</span>
+      <span>首頁</span>
+    </button>
+    <button class="nav-item" data-page="linePage">
+      <span class="nav-icon">🔔</span>
+      <span>通知</span>
+    </button>
+    <button class="nav-item add-btn" onclick="openAddModal()">
+      <span class="nav-icon">＋</span>
+      <span>新增</span>
+    </button>
+    <button class="nav-item" data-page="settingsPage">
+      <span class="nav-icon">⚙️</span>
+      <span>設定</span>
+    </button>
+    <button class="nav-item" onclick="syncFromCloud()">
+      <span class="nav-icon">🔄</span>
+      <span>同步</span>
+    </button>
+  </nav>
+
+  <!-- 新增/編輯模態框 -->
+  <div class="modal-overlay" id="eventModal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalTitle">新增事件</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="eventId">
+        
+        <div class="form-group">
+          <label class="form-label">事件名稱 *</label>
+          <input type="text" class="form-input" id="eventName" placeholder="例：第二次段考">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">分類</label>
+          <div class="category-grid">
+            <button type="button" class="category-btn selected" data-cat="exam">📝 考試</button>
+            <button type="button" class="category-btn" data-cat="payment">💰 繳費</button>
+            <button type="button" class="category-btn" data-cat="activity">🎪 活動</button>
+            <button type="button" class="category-btn" data-cat="holiday">🏖️ 假期</button>
+            <button type="button" class="category-btn" data-cat="other">📌 其他</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">日期 *</label>
+          <input type="date" class="form-input" id="eventDate">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">時間（選填）</label>
+          <input type="time" class="form-input" id="eventTime">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">備註（選填）</label>
+          <input type="text" class="form-input" id="eventNote" placeholder="其他說明...">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">📤 LINE 通知模式</label>
+          <div class="notify-mode-selector">
+            <button type="button" class="notify-btn selected" data-mode="auto">
+              <span class="notify-icon">🔄</span>
+              <span class="notify-text">自動推送</span>
+              <span class="notify-desc">每日定時發送</span>
+            </button>
+            <button type="button" class="notify-btn" data-mode="manual">
+              <span class="notify-icon">✋</span>
+              <span class="notify-text">手動推送</span>
+              <span class="notify-desc">僅顯示不發送</span>
+            </button>
+            <button type="button" class="notify-btn" data-mode="off">
+              <span class="notify-icon">🔕</span>
+              <span class="notify-text">關閉通知</span>
+              <span class="notify-desc">不發送 LINE</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="settings-btn btn-primary" onclick="saveEvent()">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================
+    // 🚀 開機動畫
+    // ============================================
+    (function initSplash() {
+      // 生成粒子
+      const particlesContainer = document.getElementById('particles');
+      for (let i = 0; i < 30; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 3 + 's';
+        particle.style.animationDuration = (2 + Math.random() * 2) + 's';
+        
+        // 隨機顏色
+        const colors = ['#00f5ff', '#ff00ff', '#a855f7', '#00ff88'];
+        particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+        particle.style.boxShadow = `0 0 6px ${particle.style.background}`;
+        
+        particlesContainer.appendChild(particle);
+      }
+
+      // 2.5 秒後關閉開機動畫
+      setTimeout(() => {
+        const splash = document.getElementById('splashScreen');
+        splash.classList.add('fade-out');
+        
+        // 完全移除
+        setTimeout(() => {
+          splash.remove();
+        }, 800);
+      }, 2500);
+    })();
+
+    // ============================================
+    // 資料
+    // ============================================
+    const STORAGE_KEY = 'countdown_events_v2';
+    const SETTINGS_KEY = 'countdown_settings_v2';
+    
+    let events = [];
+    let currentFilter = 'all';
+    let selectedCategory = 'exam';
+    let selectedNotifyMode = 'auto';
+
+    const CATEGORIES = {
+      exam: { label: '考試', icon: '📝', tag: 'tag-exam' },
+      payment: { label: '繳費', icon: '💰', tag: 'tag-payment' },
+      activity: { label: '活動', icon: '🎪', tag: 'tag-activity' },
+      holiday: { label: '假期', icon: '🏖️', tag: 'tag-holiday' },
+      other: { label: '其他', icon: '📌', tag: 'tag-other' }
+    };
+
+    const NOTIFY_MODES = {
+      auto: { label: '自動', icon: '🔄' },
+      manual: { label: '手動', icon: '✋' },
+      off: { label: '關閉', icon: '🔕' }
+    };
+
+    // ============================================
+    // 初始化
+    // ============================================
+    document.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      loadSettings();
+      render();
+      initNav();
+      initFilters();
+      initCategoryBtns();
+      initNotifyBtns();
+    });
+
+    function loadData() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      events = saved ? JSON.parse(saved) : getDefaultEvents();
+    }
+
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+    }
+
+    async function syncFromCloud() {
+      const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+      if (!settings.gasUrl || !settings.secretKey) {
+        showToast('請先設定 GAS 連線', 'error');
+        return;
+      }
+
+      showToast('同步中...', 'info');
+      try {
+        const res = await fetch(settings.gasUrl, {
+          method: 'POST',
+          mode: 'cors',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'getEvents', secret: settings.secretKey })
+        });
+        const text = await res.text();
+        const result = JSON.parse(text);
+
+        if (result.success && result.events) {
+          events = result.events;
+          saveData();
+          render();
+          showToast('已從雲端同步 ' + events.length + ' 個事件 ✓', 'success');
+        } else {
+          showToast('同步失敗：' + (result.error || ''), 'error');
+        }
+      } catch (err) {
+        showToast('同步失敗：' + err.message, 'error');
+      }
+    }
+
+    function getDefaultEvents() {
+      const today = new Date();
+      return [
+        { id: 1, name: '第二次段考', category: 'exam', date: addDays(today, 10), time: '08:00', note: '範圍：第三~五章', notifyMode: 'auto' },
+        { id: 2, name: '下學期註冊費', category: 'payment', date: addDays(today, 20), time: '', note: '請至超商繳費', notifyMode: 'auto' },
+        { id: 3, name: '校慶運動會', category: 'activity', date: addDays(today, 5), time: '08:30', note: '穿運動服', notifyMode: 'manual' }
+      ];
+    }
+
+    function addDays(date, days) {
+      const d = new Date(date);
+      d.setDate(d.getDate() + days);
+      return d.toISOString().split('T')[0];
+    }
+
+    // ============================================
+    // 渲染
+    // ============================================
+    function render() {
+      renderEvents();
+      renderStats();
+      loadNotifySettings();
+    }
+
+    function renderEvents() {
+      const list = document.getElementById('eventsList');
+      let filtered = events.filter(e => currentFilter === 'all' || e.category === currentFilter);
+      filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      if (filtered.length === 0) {
+        list.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><p>目前沒有事件</p></div>`;
+        return;
+      }
+
+      list.innerHTML = filtered.map(e => {
+        const days = getDaysLeft(e.date);
+        const status = getStatus(days);
+        const cat = CATEGORIES[e.category] || CATEGORIES.other;
+        const weekday = getWeekday(e.date);
+        const notify = NOTIFY_MODES[e.notifyMode] || NOTIFY_MODES.auto;
+
+        return `
+          <div class="event-card ${status}">
+            <div class="countdown-badge">
+              <div class="countdown-num">${days < 0 ? '過' : days}</div>
+              <div class="countdown-unit">${days < 0 ? '期' : '天'}</div>
+            </div>
+            <div class="event-content">
+              <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                <span class="event-category-tag ${cat.tag}">${cat.icon} ${cat.label}</span>
+                <span class="notify-badge" title="${notify.label}通知">${notify.icon}</span>
+              </div>
+              <div class="event-name">${e.name}</div>
+              <div class="event-date-text">📅 ${formatDate(e.date)}（${weekday}）${e.time ? ' ' + e.time : ''}</div>
+            </div>
+            <div class="event-actions">
+              <button class="action-icon" onclick="editEvent(${e.id})">✏️</button>
+              <button class="action-icon" onclick="deleteEvent(${e.id})">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderStats() {
+      let urgent = 0, soon = 0, normal = 0;
+      events.forEach(e => {
+        const d = getDaysLeft(e.date);
+        if (d < 0) return;
+        if (d <= 3) urgent++;
+        else if (d <= 7) soon++;
+        else normal++;
+      });
+      document.getElementById('urgentCount').textContent = urgent;
+      document.getElementById('soonCount').textContent = soon;
+      document.getElementById('normalCount').textContent = normal;
+    }
+
+    // ============================================
+    // 工具函數
+    // ============================================
+    function getDaysLeft(dateStr) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const target = new Date(dateStr);
+      target.setHours(0, 0, 0, 0);
+      return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+    }
+
+    function getStatus(days) {
+      if (days < 0) return 'passed';
+      if (days <= 3) return 'urgent';
+      if (days <= 7) return 'soon';
+      return 'normal';
+    }
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function getWeekday(dateStr) {
+      const days = ['日', '一', '二', '三', '四', '五', '六'];
+      return '週' + days[new Date(dateStr).getDay()];
+    }
+
+    // ============================================
+    // 導航
+    // ============================================
+    function initNav() {
+      document.querySelectorAll('.nav-item[data-page]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+          btn.classList.add('active');
+          document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
+          document.getElementById(btn.dataset.page).classList.add('active');
+        });
+      });
+    }
+
+    function initFilters() {
+      document.querySelectorAll('.filter-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentFilter = btn.dataset.filter;
+          renderEvents();
+        });
+      });
+    }
+
+    function initCategoryBtns() {
+      document.querySelectorAll('.category-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          selectedCategory = btn.dataset.cat;
+        });
+      });
+    }
+
+    function initNotifyBtns() {
+      document.querySelectorAll('.notify-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.notify-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          selectedNotifyMode = btn.dataset.mode;
+        });
+      });
+    }
+
+    // ============================================
+    // 模態框
+    // ============================================
+    function openAddModal() {
+      document.getElementById('modalTitle').textContent = '新增事件';
+      document.getElementById('eventId').value = '';
+      document.getElementById('eventName').value = '';
+      document.getElementById('eventDate').value = '';
+      document.getElementById('eventTime').value = '';
+      document.getElementById('eventNote').value = '';
+      document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('selected'));
+      document.querySelector('.category-btn[data-cat="exam"]').classList.add('selected');
+      selectedCategory = 'exam';
+      document.querySelectorAll('.notify-btn').forEach(b => b.classList.remove('selected'));
+      document.querySelector('.notify-btn[data-mode="auto"]').classList.add('selected');
+      selectedNotifyMode = 'auto';
+      document.getElementById('eventModal').classList.add('active');
+    }
+
+    function editEvent(id) {
+      const e = events.find(x => x.id === id);
+      if (!e) return;
+      document.getElementById('modalTitle').textContent = '編輯事件';
+      document.getElementById('eventId').value = e.id;
+      document.getElementById('eventName').value = e.name;
+      document.getElementById('eventDate').value = e.date;
+      document.getElementById('eventTime').value = e.time || '';
+      document.getElementById('eventNote').value = e.note || '';
+      document.querySelectorAll('.category-btn').forEach(b => {
+        b.classList.remove('selected');
+        if (b.dataset.cat === e.category) {
+          b.classList.add('selected');
+          selectedCategory = e.category;
+        }
+      });
+      document.querySelectorAll('.notify-btn').forEach(b => {
+        b.classList.remove('selected');
+        if (b.dataset.mode === (e.notifyMode || 'auto')) {
+          b.classList.add('selected');
+          selectedNotifyMode = e.notifyMode || 'auto';
+        }
+      });
+      document.getElementById('eventModal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('eventModal').classList.remove('active');
+    }
+
+    async function saveEvent() {
+      const id = document.getElementById('eventId').value;
+      const name = document.getElementById('eventName').value.trim();
+      const date = document.getElementById('eventDate').value;
+      const time = document.getElementById('eventTime').value;
+      const note = document.getElementById('eventNote').value.trim();
+
+      if (!name || !date) {
+        showToast('請填寫名稱和日期', 'error');
+        return;
+      }
+
+      const eventData = {
+        id: id || Date.now().toString(),
+        name,
+        category: selectedCategory,
+        date,
+        time,
+        note,
+        notifyMode: selectedNotifyMode
+      };
+
+      // 同步到 Google Sheets
+      const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+      if (settings.gasUrl && settings.secretKey) {
+        showToast('儲存中...', 'info');
+        try {
+          const action = id ? 'updateEvent' : 'addEvent';
+          const res = await fetch(settings.gasUrl, {
+            method: 'POST',
+            mode: 'cors',
+            redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action, secret: settings.secretKey, event: eventData })
+          });
+          const text = await res.text();
+          const result = JSON.parse(text);
+          
+          if (result.success) {
+            if (result.id) eventData.id = result.id;
+            showToast('已同步到雲端 ✓', 'success');
+          } else {
+            showToast('雲端同步失敗，已存本機', 'error');
+          }
+        } catch (err) {
+          showToast('雲端同步失敗，已存本機', 'error');
+        }
+      }
+
+      // 本機儲存
+      if (id) {
+        const idx = events.findIndex(e => e.id.toString() === id.toString());
+        if (idx !== -1) events[idx] = eventData;
+      } else {
+        events.push(eventData);
+      }
+
+      saveData();
+      render();
+      closeModal();
+    }
+
+    async function deleteEvent(id) {
+      if (!confirm('確定刪除？')) return;
+      
+      // 同步刪除 Google Sheets
+      const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+      if (settings.gasUrl && settings.secretKey) {
+        try {
+          await fetch(settings.gasUrl, {
+            method: 'POST',
+            mode: 'cors',
+            redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'deleteEvent', secret: settings.secretKey, eventId: id })
+          });
+        } catch (err) {
+          console.log('雲端刪除失敗');
+        }
+      }
+
+      // 本機刪除
+      events = events.filter(e => e.id.toString() !== id.toString());
+      saveData();
+      render();
+      showToast('已刪除 ✓', 'success');
+    }
+
+    // ============================================
+    // LINE 功能 - 自動通知設定
+    // ============================================
+    
+    async function loadNotifySettings() {
+      const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+      if (!settings.gasUrl) return;
+      
+      try {
+        const res = await fetch(settings.gasUrl, {
+          method: 'POST',
+          mode: 'cors',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'getSettings', secret: settings.secretKey })
+        });
+        const text = await res.text();
+        const result = JSON.parse(text);
+        
+        if (result.success && result.settings) {
+          document.getElementById('sendTime').value = result.settings.sendTime || '07:00';
+          document.getElementById('remindDays').value = result.settings.remindDays || 30;
+        }
+      } catch (err) {
+        console.log('載入設定失敗:', err);
+      }
+    }
+
+    async function saveNotifySettings() {
+      const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+      if (!settings.gasUrl || !settings.secretKey) {
+        showToast('請先設定 GAS 連線', 'error');
+        return;
+      }
+
+      const sendTime = document.getElementById('sendTime').value;
+      const remindDays = parseInt(document.getElementById('remindDays').value) || 30;
+
+      showToast('儲存中...', 'info');
+
+      try {
+        const res = await fetch(settings.gasUrl, {
+          method: 'POST',
+          mode: 'cors',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'saveSettings',
+            secret: settings.secretKey,
+            settings: {
+              sendTime: sendTime,
+              remindDays: remindDays,
+              autoSend: true
+            }
+          })
+        });
+        const text = await res.text();
+        const result = JSON.parse(text);
+        
+        if (result.success) {
+          showToast('設定已儲存 ✓ 每日 ' + sendTime + ' 自動發送', 'success');
+        } else {
+          showToast('儲存失敗：' + (result.error || ''), 'error');
+        }
+      } catch (err) {
+        showToast('錯誤：' + err.message, 'error');
+      }
+    }
+
+    async function sendNow() {
+      const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+      if (!settings.gasUrl || !settings.secretKey) {
+        showToast('請先設定 GAS 連線', 'error');
+        return;
+      }
+
+      showToast('發送中...', 'info');
+
+      try {
+        const res = await fetch(settings.gasUrl, {
+          method: 'POST',
+          mode: 'cors',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'sendNow', secret: settings.secretKey, mode: 'auto' })
+        });
+        const text = await res.text();
+        const result = JSON.parse(text);
+        
+        if (result.success) {
+          showToast('已發送 ✓', 'success');
+        } else {
+          showToast('發送失敗：' + (result.error || ''), 'error');
+        }
+      } catch (err) {
+        showToast('錯誤：' + err.message, 'error');
+      }
+    }
+
+    async function sendManualEvents() {
+      const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+      if (!settings.gasUrl || !settings.secretKey) {
+        showToast('請先設定 GAS 連線', 'error');
+        return;
+      }
+
+      showToast('發送中...', 'info');
+
+      try {
+        const res = await fetch(settings.gasUrl, {
+          method: 'POST',
+          mode: 'cors',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'sendNow', secret: settings.secretKey, mode: 'manual' })
+        });
+        const text = await res.text();
+        const result = JSON.parse(text);
+        
+        if (result.success) {
+          showToast('已發送 ✓', 'success');
+        } else {
+          showToast('發送失敗：' + (result.error || ''), 'error');
+        }
+      } catch (err) {
+        showToast('錯誤：' + err.message, 'error');
+      }
+    }
+
+    function openSheet() {
+      const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+      if (settings.sheetUrl) {
+        // 直接開啟試算表
+        window.open(settings.sheetUrl, '_blank');
+      } else {
+        showToast('請先在設定頁填入 Google Sheets 網址', 'error');
+      }
+    }
+
+    // ============================================
+    // 設定
+    // ============================================
+    function loadSettings() {
+      const saved = localStorage.getItem(SETTINGS_KEY);
+      if (saved) {
+        const s = JSON.parse(saved);
+        document.getElementById('gasUrl').value = s.gasUrl || '';
+        document.getElementById('secretKey').value = s.secretKey || '';
+        document.getElementById('sheetUrl').value = s.sheetUrl || '';
+      }
+    }
+
+    function saveSettings() {
+      const gasUrl = document.getElementById('gasUrl').value.trim();
+      const secretKey = document.getElementById('secretKey').value.trim();
+      const sheetUrl = document.getElementById('sheetUrl').value.trim();
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ gasUrl, secretKey, sheetUrl }));
+      showToast('設定已儲存 ✓', 'success');
+    }
+
+    async function testConnection() {
+      const gasUrl = document.getElementById('gasUrl').value.trim();
+      const secretKey = document.getElementById('secretKey').value.trim();
+      if (!gasUrl || !secretKey) {
+        showToast('請填寫完整', 'error');
+        return;
+      }
+      showToast('測試中...', 'info');
+      try {
+        const res = await fetch(gasUrl, {
+          method: 'POST',
+          mode: 'cors',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'test', secret: secretKey })
+        });
+        const text = await res.text();
+        try {
+          const result = JSON.parse(text);
+          if (result.success) {
+            showToast('連線成功 ✓', 'success');
+          } else {
+            showToast('失敗：' + (result.error || '未知錯誤'), 'error');
+          }
+        } catch {
+          if (res.ok) {
+            showToast('連線成功 ✓', 'success');
+          } else {
+            showToast('連線失敗', 'error');
+          }
+        }
+      } catch (err) {
+        showToast('錯誤：' + err.message, 'error');
+      }
+    }
+
+    // ============================================
+    // 匯入匯出
+    // ============================================
+    function exportData() {
+      const data = JSON.stringify(events, null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'countdown_events.json';
+      a.click();
+      showToast('已匯出', 'success');
+    }
+
+    function importData() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            events = JSON.parse(ev.target.result);
+            saveData();
+            render();
+            showToast('已匯入', 'success');
+          } catch {
+            showToast('檔案格式錯誤', 'error');
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
+    // ============================================
+    // Toast
+    // ============================================
+    function showToast(msg, type = 'info') {
+      const existing = document.querySelector('.toast');
+      if (existing) existing.remove();
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2500);
+    }
+  </script>
+</body>
+</html>
